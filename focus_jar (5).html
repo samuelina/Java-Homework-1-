@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus Jar</title>
+  <style>
+    /* Warm, calming palette and clean typography */
+    :root {
+      --bg-top: #f5f2eb;
+      --bg-bottom: #e5ece7;
+      --card-bg: rgba(255, 255, 255, 0.88);
+      --text-primary: #26352d;
+      --text-secondary: #5c6e64;
+      --btn-primary: #4c7c64;
+      --btn-primary-hover: #3e6853;
+      --btn-pause: #c77b30;
+      --btn-pause-hover: #ad6824;
+      --btn-secondary: #e4ebe7;
+      --btn-secondary-hover: #d5e0da;
+      --jar-border: #8aa596;
+      --jar-glass: rgba(255, 255, 255, 0.55);
+      --today-accent: #c87d28;
+      --today-bg: #fdf5e8;
+      --today-border: rgba(217, 155, 67, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text-primary);
+      background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+    }
+
+    /* Centered container card */
+    .app-card {
+      width: 100%;
+      max-width: 440px;
+      padding: 2rem 1.75rem;
+      background: var(--card-bg);
+      border-radius: 28px;
+      box-shadow: 0 20px 45px rgba(38, 53, 45, 0.1);
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Mode switcher pill bar (Focus / Break with inline custom minute inputs) */
+    .mode-switcher {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(228, 235, 231, 0.85);
+      padding: 0.35rem;
+      border-radius: 14px;
+      margin-bottom: 1.4rem;
+      width: 100%;
+    }
+
+    .mode-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.38rem;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .mode-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    /* Highlighted state for the active mode */
+    .mode-btn.active {
+      background: #ffffff;
+      color: var(--btn-primary);
+      box-shadow: 0 3px 8px rgba(38, 53, 45, 0.1);
+    }
+
+    /* Inline custom minute field */
+    .mode-minutes-input {
+      width: 3.1rem;
+      padding: 0.2rem 0.25rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      color: inherit;
+      background: rgba(228, 235, 231, 0.65);
+      border: 1px solid rgba(138, 165, 150, 0.55);
+      border-radius: 7px;
+      outline: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .mode-btn.active .mode-minutes-input {
+      background: rgba(240, 244, 241, 0.9);
+      border-color: rgba(76, 124, 100, 0.45);
+    }
+
+    .mode-minutes-input:focus {
+      border-color: var(--btn-primary);
+      background: #ffffff;
+    }
+
+    /* Clean countdown readout card */
+    .timer-box {
+      padding: 1.25rem 1rem;
+      margin-bottom: 1.25rem;
+      background: rgba(240, 244, 241, 0.75);
+      border: 1px solid rgba(138, 165, 150, 0.35);
+      border-radius: 20px;
+    }
+
+    .time-display {
+      font-size: 4rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+
+    .timer-status {
+      margin-top: 0.45rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+
+    /* Primary action buttons */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 0.82rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: var(--btn-primary);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(76, 124, 100, 0.26);
+    }
+
+    .btn-primary:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    /* Warm amber state when timer is actively running */
+    .btn-primary.is-running {
+      background: var(--btn-pause);
+      box-shadow: 0 6px 16px rgba(199, 123, 48, 0.26);
+    }
+
+    .btn-primary.is-running:hover {
+      background: var(--btn-pause-hover);
+    }
+
+    .btn-secondary {
+      background: var(--btn-secondary);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--btn-secondary-hover);
+    }
+
+    /* Demo speed toggle row */
+    .demo-toggle-row {
+      margin-top: 0.85rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(228, 235, 231, 0.65);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .demo-label:hover {
+      background: rgba(228, 235, 231, 0.95);
+      color: var(--text-primary);
+    }
+
+    .demo-label input[type="checkbox"] {
+      accent-color: var(--btn-primary);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    /* Task list section */
+    .tasks-section {
+      margin-top: 1.5rem;
+      padding-top: 1.35rem;
+      border-top: 1px solid rgba(138, 165, 150, 0.3);
+      text-align: left;
+    }
+
+    .task-form {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .task-input {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: #f5f7f6;
+      border: 1.5px solid rgba(138, 165, 150, 0.45);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .task-input:focus {
+      border-color: var(--btn-primary);
+      background: #ffffff;
+    }
+
+    .btn-add {
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background: var(--btn-primary);
+      color: #ffffff;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.12s ease;
+    }
+
+    .btn-add:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    .btn-add:active {
+      transform: scale(0.97);
+    }
+
+    .task-list {
+      list-style: none;
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      max-height: 175px;
+      overflow-y: auto;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      background: rgba(244, 247, 245, 0.9);
+      border: 1px solid rgba(138, 165, 150, 0.28);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .task-item:hover {
+      background: #edf2ef;
+    }
+
+    .task-text {
+      flex: 1;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      word-break: break-word;
+      user-select: none;
+    }
+
+    /* Crossed-off completed task state */
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+      opacity: 0.72;
+    }
+
+    .task-delete {
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .task-delete:hover {
+      background: rgba(196, 85, 77, 0.14);
+      color: #b8423a;
+    }
+
+    /* Pure CSS Glass Jar section below the task list */
+    .jar-section {
+      margin-top: 1.5rem;
+      padding-top: 1.35rem;
+      border-top: 1px solid rgba(138, 165, 150, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .jar-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Cork lid */
+    .jar-lid {
+      width: 88px;
+      height: 15px;
+      background: linear-gradient(180deg, #d7b286, #b98f61);
+      border-radius: 7px 7px 2px 2px;
+      border: 2px solid #967048;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Glass neck ring */
+    .jar-neck {
+      width: 102px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2.5px solid var(--jar-border);
+      border-radius: 6px;
+      margin-top: -1px;
+      z-index: 2;
+    }
+
+    /* Main glass body */
+    .jar-body {
+      position: relative;
+      width: 156px;
+      height: 172px;
+      margin-top: -2px;
+      background: var(--jar-glass);
+      border: 3px solid var(--jar-border);
+      border-radius: 22px 22px 34px 34px;
+      overflow: hidden;
+      box-shadow:
+        inset 0 0 18px rgba(255, 255, 255, 0.8),
+        0 10px 22px rgba(38, 53, 45, 0.08);
+      display: flex;
+      align-items: flex-end;
+      padding: 10px;
+    }
+
+    /* Glossy glass highlight streak */
+    .jar-body::after {
+      content: "";
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 10px;
+      height: 76%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.08));
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Container stacking marbles from the bottom up */
+    .marble-pit {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap-reverse;
+      align-content: flex-start;
+      justify-content: center;
+      gap: 4px;
+      z-index: 1;
+    }
+
+    /* Individual glossy glass marble */
+    .marble {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      position: relative;
+      box-shadow:
+        inset -3px -3px 6px rgba(0, 0, 0, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.14);
+    }
+
+    /* Specular shine dot on each marble */
+    .marble::before {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 5px;
+      width: 6px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.85);
+      transform: rotate(-25deg);
+    }
+
+    /* Golden ring & warm glow distinguishing today's marbles from earlier ones */
+    .marble.is-today {
+      box-shadow:
+        0 0 0 2px rgba(246, 195, 92, 0.95),
+        0 0 8px rgba(235, 168, 52, 0.55),
+        inset -3px -3px 6px rgba(0, 0, 0, 0.22);
+    }
+
+    /* Drop-in animation when a Focus session reaches 00:00 */
+    .marble.drop-in {
+      animation: marbleDrop 0.6s cubic-bezier(0.22, 1.15, 0.45, 1) forwards;
+    }
+
+    @keyframes marbleDrop {
+      0% {
+        opacity: 0;
+        transform: translateY(-135px) scale(0.85);
+      }
+      65% {
+        opacity: 1;
+        transform: translateY(3px) scale(1.04);
+      }
+      82% {
+        transform: translateY(-4px) scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Today vs. All-time marble count pills below the jar */
+    .session-stats {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.38rem 0.78rem;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      border: 1px solid rgba(138, 165, 150, 0.35);
+      background: rgba(240, 244, 241, 0.85);
+      color: var(--text-primary);
+    }
+
+    .stat-badge.today-badge {
+      background: var(--today-bg);
+      border-color: var(--today-border);
+      color: #8f5314;
+    }
+
+    .stat-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stat-dot.today-dot {
+      background: radial-gradient(circle at 30% 30%, #ffd57e, #d9822b);
+      box-shadow: 0 0 0 1.5px rgba(246, 195, 92, 0.85);
+    }
+
+    .stat-dot.alltime-dot {
+      background: radial-gradient(circle at 30% 30%, #86b79c, #4a7860);
+    }
+  </style>
+</head>
+<body>
+  <main class="app-card">
+    <h1>Focus Jar</h1>
+    <p class="subtitle" id="subtitleText">Fill your jar with 25 minutes of calm focus</p>
+
+    <!-- Mode Selection Bar with Custom Minute Inputs -->
+    <div class="mode-switcher" role="group" aria-label="Timer mode">
+      <button type="button" class="mode-btn active" id="focusModeBtn">
+        <span>Focus</span>
+        <input
+          type="number"
+          class="mode-minutes-input"
+          id="focusMinutesInput"
+          value="25"
+          min="1"
+          max="180"
+          aria-label="Focus minutes"
+        />
+        <span>m</span>
+      </button>
+      <button type="button" class="mode-btn" id="breakModeBtn">
+        <span>Break</span>
+        <input
+          type="number"
+          class="mode-minutes-input"
+          id="breakMinutesInput"
+          value="5"
+          min="1"
+          max="180"
+          aria-label="Break minutes"
+        />
+        <span>m</span>
+      </button>
+    </div>
+
+    <!-- Clean Countdown Display -->
+    <section class="timer-box" aria-label="Countdown timer">
+      <div class="time-display" id="timerDisplay" aria-live="polite">25:00</div>
+      <div class="timer-status" id="statusText">Ready when you are</div>
+    </section>
+
+    <!-- Start / Pause & Reset Buttons -->
+    <div class="controls">
+      <button type="button" class="action-btn btn-primary" id="startPauseBtn">Start</button>
+      <button type="button" class="action-btn btn-secondary" id="resetBtn">Reset</button>
+    </div>
+
+    <!-- Demo Speed Toggle (1 minute passes in 1 second) -->
+    <div class="demo-toggle-row">
+      <label class="demo-label" for="demoSpeedCheckbox">
+        <input type="checkbox" id="demoSpeedCheckbox" />
+        <span>Demo speed (1 min = 1 sec)</span>
+      </label>
+    </div>
+
+    <!-- Task List Section -->
+    <section class="tasks-section" aria-label="Focus tasks">
+      <form class="task-form" id="taskForm">
+        <input
+          type="text"
+          class="task-input"
+          id="taskInput"
+          placeholder="What are you focusing on?"
+          aria-label="New task"
+        />
+        <button type="submit" class="btn-add" id="addTaskBtn">Add</button>
+      </form>
+      <ul class="task-list" id="taskList"></ul>
+    </section>
+
+    <!-- CSS Glass Jar & Today / All-Time Session Counters -->
+    <section class="jar-section" aria-label="Completed focus sessions jar">
+      <div class="jar-wrapper" aria-hidden="true">
+        <div class="jar-lid"></div>
+        <div class="jar-neck"></div>
+        <div class="jar-body">
+          <div class="marble-pit" id="marblePit"></div>
+        </div>
+      </div>
+
+      <div class="session-stats" aria-live="polite">
+        <span class="stat-badge today-badge">
+          <span class="stat-dot today-dot" aria-hidden="true"></span>
+          <span id="todayCountText">Today: 0 focus sessions</span>
+        </span>
+        <span class="stat-badge">
+          <span class="stat-dot alltime-dot" aria-hidden="true"></span>
+          <span id="allTimeCountText">All-time: 0 focus sessions</span>
+        </span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Mode presets in seconds (updated dynamically when user edits minute inputs)
+    const MODES = {
+      focus: {
+        minutes: 25,
+        seconds: 25 * 60,
+        getSubtitle: (mins) => `Fill your jar with ${mins} minute${mins === 1 ? "" : "s"} of calm focus`,
+        runningText: "Focusing... stay steady",
+        doneText: "Focus complete! Marble added to your jar."
+      },
+      break: {
+        minutes: 5,
+        seconds: 5 * 60,
+        getSubtitle: (mins) => `Take a refreshing ${mins}-minute break`,
+        runningText: "Resting... recharging your energy",
+        doneText: "Break complete! Ready to focus again."
+      }
+    };
+
+    // Glossy marble color gradients: warm golden-amber tones for today, cool glass tones for earlier sessions
+    const TODAY_MARBLE_COLORS = [
+      "radial-gradient(circle at 35% 35%, #ffe08a, #d9822b)",
+      "radial-gradient(circle at 35% 35%, #ffd07a, #c96b2c)",
+      "radial-gradient(circle at 35% 35%, #f9d976, #b88428)",
+      "radial-gradient(circle at 35% 35%, #ffc482, #c7633b)"
+    ];
+
+    const EARLIER_MARBLE_COLORS = [
+      "radial-gradient(circle at 35% 35%, #86b79c, #4a7860)",
+      "radial-gradient(circle at 35% 35%, #89b4c4, #4c7587)",
+      "radial-gradient(circle at 35% 35%, #a79ec4, #685f87)",
+      "radial-gradient(circle at 35% 35%, #95bfa8, #55826a)"
+    ];
+
+    // Keys for persisting tasks and today/all-time marble stats in localStorage
+    const STORAGE_KEYS = {
+      tasks: "focusJar_tasks",
+      legacyMarbles: "focusJar_marbles",
+      stats: "focusJar_marbleStats"
+    };
+
+    // Timer & marble state
+    let currentMode = "focus";
+    let totalDuration = MODES.focus.seconds;
+    let remainingSeconds = totalDuration;
+    let timerInterval = null;
+    let allTimeMarbles = 0;
+    let todayMarbles = 0;
+    let savedDateKey = "";
+    let audioCtx = null;
+
+    // DOM references
+    const subtitleText = document.getElementById("subtitleText");
+    const focusModeBtn = document.getElementById("focusModeBtn");
+    const breakModeBtn = document.getElementById("breakModeBtn");
+    const focusMinutesInput = document.getElementById("focusMinutesInput");
+    const breakMinutesInput = document.getElementById("breakMinutesInput");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const statusText = document.getElementById("statusText");
+    const startPauseBtn = document.getElementById("startPauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const demoSpeedCheckbox = document.getElementById("demoSpeedCheckbox");
+    const taskForm = document.getElementById("taskForm");
+    const taskInput = document.getElementById("taskInput");
+    const taskList = document.getElementById("taskList");
+    const marblePit = document.getElementById("marblePit");
+    const todayCountText = document.getElementById("todayCountText");
+    const allTimeCountText = document.getElementById("allTimeCountText");
+
+    // Get today's local date string in YYYY-MM-DD format
+    function getLocalDateKey() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    // Format seconds as MM:SS
+    function formatTime(seconds) {
+      const safeSeconds = Math.max(0, Math.ceil(seconds));
+      const mins = Math.floor(safeSeconds / 60);
+      const secs = safeSeconds % 60;
+      return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+
+    // Update countdown readout and browser tab title
+    function updateDisplay() {
+      const formatted = formatTime(remainingSeconds);
+      timerDisplay.textContent = formatted;
+      const modeLabel = currentMode === "focus" ? "Focus" : "Break";
+      document.title = `${formatted} - ${modeLabel} | Focus Jar`;
+    }
+
+    // Clamp custom minute values between 1 and 180
+    function clampMinutes(rawValue, fallback) {
+      const parsed = parseInt(rawValue, 10);
+      if (Number.isNaN(parsed)) return fallback;
+      return Math.min(180, Math.max(1, parsed));
+    }
+
+    // Apply updated custom minutes for Focus or Break mode
+    function updateModeLength(mode, inputEl, commitValue = false) {
+      const validMinutes = clampMinutes(inputEl.value, MODES[mode].minutes);
+      if (commitValue) {
+        inputEl.value = validMinutes;
+      }
+      MODES[mode].minutes = validMinutes;
+      MODES[mode].seconds = validMinutes * 60;
+
+      if (currentMode === mode) {
+        pauseTimer();
+        totalDuration = MODES[mode].seconds;
+        remainingSeconds = totalDuration;
+        subtitleText.textContent = MODES[mode].getSubtitle(validMinutes);
+        statusText.textContent = "Ready when you are";
+        updateDisplay();
+      }
+    }
+
+    // Switch between Focus and Break modes and highlight the active button
+    function setMode(mode) {
+      pauseTimer();
+      currentMode = mode;
+      totalDuration = MODES[mode].seconds;
+      remainingSeconds = totalDuration;
+
+      focusModeBtn.classList.toggle("active", mode === "focus");
+      breakModeBtn.classList.toggle("active", mode === "break");
+      subtitleText.textContent = MODES[mode].getSubtitle(MODES[mode].minutes);
+      statusText.textContent = "Ready when you are";
+
+      updateDisplay();
+    }
+
+    // Update both Today and All-Time session counter labels
+    function updateSessionCounterLabels() {
+      const todayNoun = todayMarbles === 1 ? "session" : "sessions";
+      const allTimeNoun = allTimeMarbles === 1 ? "session" : "sessions";
+      todayCountText.textContent = `Today: ${todayMarbles} focus ${todayNoun}`;
+      allTimeCountText.textContent = `All-time: ${allTimeMarbles} focus ${allTimeNoun}`;
+    }
+
+    // Save today's count, local date key, and all-time count to localStorage
+    function saveMarbleStats() {
+      try {
+        const payload = {
+          dateKey: savedDateKey,
+          today: todayMarbles,
+          allTime: allTimeMarbles
+        };
+        localStorage.setItem(STORAGE_KEYS.stats, JSON.stringify(payload));
+        localStorage.setItem(STORAGE_KEYS.legacyMarbles, String(allTimeMarbles));
+      } catch (err) {
+        // Ignore storage quota or private-mode restrictions
+      }
+    }
+
+    // Create a single marble DOM element styled as either Today or Earlier
+    function createMarbleElement(index, isToday, animate) {
+      const marble = document.createElement("span");
+      marble.className = "marble";
+      if (isToday) {
+        marble.classList.add("is-today");
+        marble.style.background = TODAY_MARBLE_COLORS[index % TODAY_MARBLE_COLORS.length];
+        marble.title = "Completed today";
+      } else {
+        marble.style.background = EARLIER_MARBLE_COLORS[index % EARLIER_MARBLE_COLORS.length];
+        marble.title = "Completed on an earlier day";
+      }
+      if (animate) {
+        marble.classList.add("drop-in");
+      }
+      return marble;
+    }
+
+    // Rebuild all marbles inside the jar (earlier marbles at bottom, today's marbles on top)
+    function renderJarMarbles() {
+      marblePit.innerHTML = "";
+      const earlierCount = Math.max(0, allTimeMarbles - todayMarbles);
+
+      for (let i = 0; i < earlierCount; i++) {
+        marblePit.appendChild(createMarbleElement(i, false, false));
+      }
+      for (let j = 0; j < todayMarbles; j++) {
+        marblePit.appendChild(createMarbleElement(earlierCount + j, true, false));
+      }
+    }
+
+    // Reset today's count to 0 if the local calendar day has rolled over
+    function ensureCurrentDateRollover(shouldReRender = true) {
+      const currentDateKey = getLocalDateKey();
+      if (savedDateKey !== currentDateKey) {
+        savedDateKey = currentDateKey;
+        todayMarbles = 0;
+        saveMarbleStats();
+        updateSessionCounterLabels();
+        if (shouldReRender) {
+          renderJarMarbles();
+        }
+      }
+    }
+
+    // Load today & all-time marble stats (migrating legacy focusJar_marbles if needed)
+    function loadMarbleStats() {
+      const currentDateKey = getLocalDateKey();
+      let loadedAllTime = 0;
+      let loadedToday = 0;
+      let loadedDateKey = currentDateKey;
+
+      try {
+        const rawStats = localStorage.getItem(STORAGE_KEYS.stats);
+        if (rawStats) {
+          const parsed = JSON.parse(rawStats);
+          loadedAllTime = Math.max(0, parseInt(parsed.allTime, 10) || 0);
+          loadedDateKey = typeof parsed.dateKey === "string" ? parsed.dateKey : currentDateKey;
+          loadedToday = loadedDateKey === currentDateKey
+            ? Math.max(0, Math.min(loadedAllTime, parseInt(parsed.today, 10) || 0))
+            : 0;
+        } else {
+          // Migrate legacy all-time marble count if present
+          const legacyCount = parseInt(localStorage.getItem(STORAGE_KEYS.legacyMarbles), 10);
+          if (!Number.isNaN(legacyCount) && legacyCount > 0) {
+            loadedAllTime = legacyCount;
+            loadedToday = 0;
+          }
+        }
+      } catch (err) {
+        loadedAllTime = 0;
+        loadedToday = 0;
+      }
+
+      allTimeMarbles = loadedAllTime;
+      todayMarbles = loadedToday;
+      savedDateKey = currentDateKey;
+      saveMarbleStats();
+      updateSessionCounterLabels();
+      renderJarMarbles();
+    }
+
+    // Drop a newly earned Focus marble into the jar and update both counters
+    function addMarbleToJar() {
+      ensureCurrentDateRollover(false);
+      allTimeMarbles += 1;
+      todayMarbles += 1;
+      saveMarbleStats();
+      updateSessionCounterLabels();
+
+      const marble = createMarbleElement(allTimeMarbles - 1, true, true);
+      marblePit.appendChild(marble);
+    }
+
+    // Save current tasks array to localStorage
+    function saveTasks() {
+      try {
+        const tasks = Array.from(taskList.children).map((li) => ({
+          text: li.querySelector(".task-text").textContent,
+          completed: li.classList.contains("completed")
+        }));
+        localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(tasks));
+      } catch (err) {
+        // Ignore storage errors
+      }
+    }
+
+    // Safely build a task list item using document.createElement and textContent
+    function createTaskElement(text, completed = false) {
+      const li = document.createElement("li");
+      li.className = "task-item";
+      if (completed) {
+        li.classList.add("completed");
+      }
+
+      const span = document.createElement("span");
+      span.className = "task-text";
+      span.textContent = text;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "task-delete";
+      deleteBtn.textContent = "×";
+      deleteBtn.setAttribute("aria-label", `Delete ${text}`);
+
+      // Toggle completed line-through state when clicking the task row
+      li.addEventListener("click", () => {
+        li.classList.toggle("completed");
+        saveTasks();
+      });
+
+      // Delete task when clicking its '×' button
+      deleteBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        li.remove();
+        saveTasks();
+      });
+
+      li.appendChild(span);
+      li.appendChild(deleteBtn);
+      return li;
+    }
+
+    // Add a new task from the input field
+    function handleAddTask(event) {
+      event.preventDefault();
+      const trimmed = taskInput.value.trim();
+      if (!trimmed) return;
+
+      const taskEl = createTaskElement(trimmed, false);
+      taskList.appendChild(taskEl);
+      taskInput.value = "";
+      taskInput.focus();
+      saveTasks();
+    }
+
+    // Restore persisted tasks on page load
+    function loadTasks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.tasks);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+
+        parsed.forEach((item) => {
+          if (item && typeof item.text === "string" && item.text.trim() !== "") {
+            taskList.appendChild(createTaskElement(item.text, Boolean(item.completed)));
+          }
+        });
+      } catch (err) {
+        // Ignore malformed storage data
+      }
+    }
+
+    // Unlock Web Audio API on user gesture so completion chimes play reliably
+    function unlockAudioContext() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (err) {
+        // Ignore if audio is unsupported
+      }
+    }
+
+    // Play a pleasant two-note harmonic bell chime when Focus or Break finishes
+    function playCompletionChime() {
+      try {
+        unlockAudioContext();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+        const notes = [
+          { freq: 523.25, start: 0, duration: 0.75, gain: 0.16 },   // C5
+          { freq: 783.99, start: 0.16, duration: 0.95, gain: 0.14 }, // G5
+          { freq: 1046.5, start: 0.16, duration: 0.85, gain: 0.05 }  // C6 shimmer
+        ];
+
+        notes.forEach(({ freq, start, duration, gain }) => {
+          const osc = audioCtx.createOscillator();
+          const env = audioCtx.createGain();
+
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + start);
+
+          env.gain.setValueAtTime(0.0001, now + start);
+          env.gain.exponentialRampToValueAtTime(gain, now + start + 0.03);
+          env.gain.exponentialRampToValueAtTime(0.0001, now + start + duration);
+
+          osc.connect(env);
+          env.connect(audioCtx.destination);
+
+          osc.start(now + start);
+          osc.stop(now + start + duration + 0.02);
+        });
+      } catch (err) {
+        // Ignore audio playback errors
+      }
+    }
+
+    // Start or resume the countdown
+    function startTimer() {
+      if (timerInterval !== null) return;
+      unlockAudioContext();
+      ensureCurrentDateRollover(true);
+
+      // Restart from full mode length if already at 00:00
+      if (remainingSeconds <= 0) {
+        remainingSeconds = totalDuration;
+      }
+
+      startPauseBtn.textContent = "Pause";
+      startPauseBtn.classList.add("is-running");
+      statusText.textContent = MODES[currentMode].runningText;
+
+      // Tick every 100ms so Demo speed (60x) and normal speed (1x) both run smoothly
+      let lastTickTime = performance.now();
+      timerInterval = setInterval(() => {
+        const now = performance.now();
+        const elapsedRealSeconds = (now - lastTickTime) / 1000;
+        lastTickTime = now;
+
+        const speedMultiplier = demoSpeedCheckbox.checked ? 60 : 1;
+        remainingSeconds -= elapsedRealSeconds * speedMultiplier;
+
+        if (remainingSeconds <= 0) {
+          remainingSeconds = 0;
+          updateDisplay();
+          pauseTimer();
+          statusText.textContent = MODES[currentMode].doneText;
+          playCompletionChime();
+
+          // Only Focus sessions drop a marble into the jar
+          if (currentMode === "focus") {
+            addMarbleToJar();
+          }
+          return;
+        }
+
+        updateDisplay();
+      }, 100);
+    }
+
+    // Pause the countdown and restore Start button appearance
+    function pauseTimer() {
+      if (timerInterval !== null) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      startPauseBtn.textContent = "Start";
+      startPauseBtn.classList.remove("is-running");
+    }
+
+    // Reset timer back to the current mode's full duration
+    function resetTimer() {
+      pauseTimer();
+      totalDuration = MODES[currentMode].seconds;
+      remainingSeconds = totalDuration;
+      statusText.textContent = "Ready when you are";
+      updateDisplay();
+    }
+
+    // Event listeners for mode buttons and inline custom minute inputs
+    focusModeBtn.addEventListener("click", () => setMode("focus"));
+    breakModeBtn.addEventListener("click", () => setMode("break"));
+
+    [
+      { mode: "focus", input: focusMinutesInput },
+      { mode: "break", input: breakMinutesInput }
+    ].forEach(({ mode, input }) => {
+      input.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (currentMode !== mode) {
+          setMode(mode);
+        }
+      });
+
+      input.addEventListener("input", () => {
+        if (input.value === "") return;
+        updateModeLength(mode, input, false);
+      });
+
+      input.addEventListener("change", () => {
+        updateModeLength(mode, input, true);
+      });
+    });
+
+    // Event listeners for Start/Pause, Reset, and Tasks
+    startPauseBtn.addEventListener("click", () => {
+      if (timerInterval === null) {
+        startTimer();
+      } else {
+        pauseTimer();
+        statusText.textContent = "Paused";
+      }
+    });
+
+    resetBtn.addEventListener("click", resetTimer);
+    taskForm.addEventListener("submit", handleAddTask);
+
+    // Check periodically for midnight rollover if the tab stays open overnight
+    setInterval(() => {
+      ensureCurrentDateRollover(true);
+    }, 30000);
+
+    // Initialize saved tasks, marble stats, and initial countdown display
+    loadTasks();
+    loadMarbleStats();
+    updateDisplay();
+  </script>
+</body>
+</html>
